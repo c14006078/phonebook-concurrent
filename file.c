@@ -9,7 +9,7 @@
 
 #define MAX_BUFF_SIZE 1000
 
-void file_align(char *org, char *mod, int pad)
+void alignFile(char *org, char *mod, int pad)
 {
     FILE *fd0 = fopen(org, "r");
     FILE *fd1 = fopen(mod, "w+");
@@ -32,7 +32,7 @@ void file_align(char *org, char *mod, int pad)
     fclose(fd1);
 }
 
-off_t fsize(char *path)
+off_t getFileSize(char *path)
 {
     struct stat st;
     stat(path, &st);

@@ -8,6 +8,27 @@
 
 #define OPT 1
 
+/**
+ * Object-Oriented
+ */
+/*typedef struct _phonebook{
+	
+	entry *pHead;
+	entry *pLast;
+
+	entry* ( *file_append)( char* lastName, entry *pHead);
+	entry* ( *append)( char* lastName, entry *pHead);
+	entry* ( *find)( char* lastName, entry *pHead);
+} phonebook;*/
+
+/**
+ * init Object
+ */
+/*phonebook* new_phonebook( entry* (* append_func)( char*, entry*), entry* (*find_func)( char*, entry*));*/
+
+/**
+ * 	STRUCTURE
+ */
 typedef struct _detail {
     char firstName[16];
     char email[16];
@@ -20,32 +41,47 @@ typedef struct _detail {
     char zip[5];
 } detail;
 
-typedef detail *pdetail;
+typedef detail *dtlPtr;
 
 typedef struct __PHONE_BOOK_ENTRY {
     char *lastName;
     struct __PHONE_BOOK_ENTRY *pNext;
-    pdetail dtl;
+    dtlPtr dtl;
 } entry;
 
-entry *findName(char lastname[], entry *pHead);
 
-typedef struct _append_a {
-    char *ptr;
-    char *eptr;
-    int tid;
+typedef struct _append_arg {
+    char *mptr; 				///< mem ptr
+    char *mbound; 			///< mem boundary
+    int idx;						///< thread id
     int nthread;
-    entry *entryStart;
     entry *pHead;
     entry *pLast;
-} append_a;
+} append_arg;
 
-append_a *new_append_a(char *ptr, char *eptr, int tid, int ntd, entry *start);
+/**
+ *		FUNCTION
+ */
+entry *findName(char lastname[], entry *pHead);
 
+/**
+ * Thread argument assign
+ */
+append_arg *new_append_arg(char *ptr, char *eptr, int tid, int ntd, entry *start);
+
+/**
+ * Pthread function with parallize
+ */
 void append(void *arg);
 
+/**
+ * Show entry context
+ */
 void show_entry(entry *pHead);
 
+/**
+ * porting from main.c
+ */
 static double diff_in_second(struct timespec t1, struct timespec t2);
 
 #endif

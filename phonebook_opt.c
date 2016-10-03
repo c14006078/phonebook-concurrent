@@ -6,6 +6,24 @@
 #include "phonebook_opt.h"
 #include "debug.h"
 
+
+/*phonebook* new_phonebook( entry* ( *append_func)( char *, entry *), entry *( *find_func)( char *, entry *)){
+
+	phonebook *phbk = ( phonebook *) malloc( sizeof( phonebook));
+
+	phbk->pHead = NULL;
+	phbk->pLast = NULL;
+	phpk->append = append_func;
+	phpk->find = find_func;
+
+	return phpk;
+}*/
+
+/*entry *phonebook_findName( char lastname[], phonebook* phbk)
+{
+	return findName( lastname, phbk->pHead);
+}*/
+
 entry *findName(char lastname[], entry *pHead)
 {
     size_t len = strlen( lastname);
@@ -16,7 +34,7 @@ entry *findName(char lastname[], entry *pHead)
             pHead->lastName = (char *) malloc( sizeof(char) * MAX_LAST_NAME_SIZE);
             memset(pHead->lastName, '\0', MAX_LAST_NAME_SIZE);
             strcpy(pHead->lastName, lastname);
-            pHead->dtl = (pdetail) malloc( sizeof( detail));
+            pHead->dtl = (dtlPtr) malloc( sizeof( detail));
             return pHead;
         }
         dprintf("find string = %s\n", pHead->lastName);
@@ -25,42 +43,68 @@ entry *findName(char lastname[], entry *pHead)
     return NULL;
 }
 
-append_a *new_append_a(char *ptr, char *eptr, int tid, int ntd, entry *start)
+append_arg *new_append_arg( char *ptr, char *bound, int id, int nthread, entry *start)
 {
-    append_a *app = (append_a *) malloc(sizeof(append_a));
+    append_arg *arg = (append_arg *) malloc(sizeof(append_arg));
 
-    app->ptr = ptr;
-    app->eptr = eptr;
-    app->tid = tid;
-    app->nthread = ntd;
-    app->entryStart = start;
+    arg->mptr = ptr;
+    arg->mbound = bound;
+    arg->idx = id;
+    arg->nthread = nthread;
 
-    app->pHead = (app->pLast = app->entryStart);
+    arg->pHead = (arg->pLast = start);
 
-    return app;
+    return arg;
 }
 
-void append(void *arg)
+void append(void *_arg)
 {
     struct timespec start, end;
     double cpu_time;
 
     clock_gettime( CLOCK_REALTIME, &start);
 
-    append_a *app = (append_a *) arg;
+    append_arg *arg = (append_arg *) _arg;
+/*
+    int count = 0;///> debug for correction
+    entry *entryPtr = arg->pHead;
 
-    int count = 0;
-    entry *j = app->entryStart;
-    for (char *i = app->ptr; i < app->eptr;
-            i += MAX_LAST_NAME_SIZE * app->nthread,
-            j += app->nthread,count++) {
-        app->pLast->pNext = j;
-        app->pLast = app->pLast->pNext;
+    for (char *memPtr = arg->mptr; memPtr < arg->mbound;
+            memPtr += MAX_LAST_NAME_SIZE * arg->nthread,
+             count++) {
 
-        app->pLast->lastName = i;
-        dprintf("thread %d append string = %s\n", app->tid, app->pLast->lastName);
-        app->pLast->pNext = NULL;
-    }
+				entryPtr->lastName = memPtr;
+
+        dprintf("thread %d append string = %s\n", arg->idx, entryPtr->lastName);
+
+				entryPtr = (entryPtr->pNext = entryPtr + arg->nthread);
+    }*/
+		/**/
+		int count = 0;
+		char *memPtr = arg->mptr;
+
+		entry *ePtr = arg->pHead;
+		while(memPtr < arg->mbound)
+		{
+			if( memPtr != arg->mptr)
+				ePtr = (ePtr->pNext = ePtr + arg->nthread);
+			
+			ePtr->lastName = memPtr;
+			memPtr += MAX_LAST_NAME_SIZE * arg->nthread;
+
+			ePtr->pNext = NULL;
+			count++;
+      dprintf("thread %d append string = %s\n", arg->idx, ePtr->lastName);
+		}
+		/**/
+
+		/* assign the pLast*/
+		arg->pLast = ePtr;
+//		arg->pLast = entryPtr;
+//    entryPtr->pNext = NULL;
+
+		//show_entry( arg->pHead);
+
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time = diff_in_second(start, end);
 

@@ -28,38 +28,38 @@ static double diff_in_second(struct timespec t1, struct timespec t2)
 
 int main(int argc, char *argv[])
 {
-#ifndef OPT
+
+		struct timespec start, end;
+    double cpu_time1, cpu_time2;
+
+#ifdef OPT
+		#include "file.c"
+		#include "debug.h"
+		#include <fcntl.h>
+		#define ALIGN_FILE "align.txt"
+
+    struct timespec mid;
+		/* align file */
+    alignFile(DICT_FILE, ALIGN_FILE, MAX_LAST_NAME_SIZE);
+#else
     FILE *fp;
     int i = 0;
     char line[MAX_LAST_NAME_SIZE];
-#else
-    struct timespec mid;
-#endif
-    struct timespec start, end;
-    double cpu_time1, cpu_time2;
 
-#ifndef OPT
     /* check file opening */
     fp = fopen(DICT_FILE, "r");
     if (!fp) {
         printf("cannot open the file\n");
         return -1;
     }
-#else
-
-#include "file.c"
-#include "debug.h"
-#include <fcntl.h>
-#define ALIGN_FILE "align.txt"
-    file_align(DICT_FILE, ALIGN_FILE, MAX_LAST_NAME_SIZE);
-    int fd = open(ALIGN_FILE, O_RDONLY | O_NONBLOCK);
-    off_t fs = fsize( ALIGN_FILE);
 #endif
 
     /* build the entry */
     entry *pHead, *e;
     pHead = (entry *) malloc(sizeof(entry));
+
     printf("size of entry : %lu bytes\n", sizeof(entry));
+
     e = pHead;
     e->pNext = NULL;
 
@@ -69,50 +69,62 @@ int main(int argc, char *argv[])
 
 #if defined(OPT)
 
-#ifndef THREAD_NUM
-#define THREAD_NUM 4
-#endif
+		#ifndef THREAD_NUM
+				#define THREAD_NUM 4
+		#endif
 
     clock_gettime(CLOCK_REALTIME, &start);
 
-    char *map = mmap(NULL, fs, PROT_READ, MAP_SHARED, fd, 0);
+		/* map file context to memory space*/
+    int fd = open(ALIGN_FILE, O_RDONLY | O_NONBLOCK);
+    off_t fSize = getFileSize( ALIGN_FILE);
 
+    char *map = mmap(NULL, fSize, PROT_READ, MAP_SHARED, fd, 0);
     assert(map && "mmap error");
 
     /* allocate at beginning */
-    entry *entry_pool = (entry *) malloc(sizeof(entry) * fs / MAX_LAST_NAME_SIZE);
-
-    assert(entry_pool && "entry_pool error");
+    entry *entryPool = (entry *) malloc(sizeof(entry) * fSize / MAX_LAST_NAME_SIZE);
+    assert( entryPool && "entry_pool error");
 
     pthread_setconcurrency(THREAD_NUM + 1);
 
     pthread_t *tid = (pthread_t *) malloc(sizeof( pthread_t) * THREAD_NUM);
-    append_a **app = (append_a **) malloc(sizeof(append_a *) * THREAD_NUM);
+    append_arg **arg = (append_arg **) malloc(sizeof(append_arg *) * THREAD_NUM);
+
+		/* assign thread arg of append */
     for (int i = 0; i < THREAD_NUM; i++)
-        app[i] = new_append_a(map + MAX_LAST_NAME_SIZE * i, map + fs, i, THREAD_NUM, entry_pool + i);
+        arg[i] = new_append_arg(map + MAX_LAST_NAME_SIZE * i, map + fSize, i, THREAD_NUM, entryPool + i);
 
     clock_gettime(CLOCK_REALTIME, &mid);
-    for (int i = 0; i < THREAD_NUM; i++)
-        pthread_create( &tid[i], NULL, (void *) &append, (void *) app[i]);
 
+		/*TODO: thread pool*/
+		/* muti-thread version append() */
     for (int i = 0; i < THREAD_NUM; i++)
-        pthread_join(tid[i], NULL);
+        pthread_create( &tid[i], NULL, (void *) &append, (void *) arg[i]);
 
-    entry *etmp;
-    pHead = pHead->pNext;
+		/* sync wait for thread exit */
+    for (int i = 0; i < THREAD_NUM; i++)
+        pthread_join( tid[i], NULL);
+
+    entry *last;
+    //pHead = pHead->pNext;
+
+		/* Merge */
     for (int i = 0; i < THREAD_NUM; i++) {
         if (i == 0) {
-            pHead = app[i]->pHead->pNext;
-            dprintf("Connect %d head string %s %p\n", i, app[i]->pHead->pNext->lastName, app[i]->ptr);
+            pHead = arg[i]->pHead;
+            dprintf("Connect %d head string %s %p\n", i, arg[i]->pHead->lastName, arg[i]->mptr);
         } else {
-            etmp->pNext = app[i]->pHead->pNext;
-            dprintf("Connect %d head string %s %p\n", i, app[i]->pHead->pNext->lastName, app[i]->ptr);
+            last->pNext = arg[i]->pHead;
+            dprintf("Connect %d head string %s %p\n", i, arg[i]->pHead->lastName, arg[i]->mptr);
         }
 
-        etmp = app[i]->pLast;
-        dprintf("Connect %d tail string %s %p\n", i, app[i]->pLast->lastName, app[i]->ptr);
+        last = arg[i]->pLast;
+        dprintf("Connect %d tail string %s %p\n", i, arg[i]->pLast->lastName, arg[i]->mptr);
         dprintf("round %d\n", i);
     }
+
+		//show_entry( pHead);
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time1 = diff_in_second(start, end);
@@ -129,7 +141,6 @@ int main(int argc, char *argv[])
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time1 = diff_in_second(start, end);
-
 #endif
 
 #ifndef OPT
@@ -172,10 +183,11 @@ int main(int argc, char *argv[])
     if (pHead->pNext) free(pHead->pNext);
     free(pHead);
 #else
-    free(entry_pool);
+    free(entryPool);
     free(tid);
-    free(app);
-    munmap(map, fs);
+    free(arg);
+    munmap(map, fSize);
 #endif
+
     return 0;
 }
