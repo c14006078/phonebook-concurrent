@@ -29,17 +29,17 @@ static double diff_in_second(struct timespec t1, struct timespec t2)
 int main(int argc, char *argv[])
 {
 
-		struct timespec start, end;
+    struct timespec start, end;
     double cpu_time1, cpu_time2;
 
 #ifdef OPT
-		#include "file.c"
-		#include "debug.h"
-		#include <fcntl.h>
-		#define ALIGN_FILE "align.txt"
+#include "file.c"
+#include "debug.h"
+#include <fcntl.h>
+#define ALIGN_FILE "align.txt"
 
     struct timespec mid;
-		/* align file */
+    /* align file */
     alignFile(DICT_FILE, ALIGN_FILE, MAX_LAST_NAME_SIZE);
 #else
     FILE *fp;
@@ -69,13 +69,13 @@ int main(int argc, char *argv[])
 
 #if defined(OPT)
 
-		#ifndef THREAD_NUM
-				#define THREAD_NUM 4
-		#endif
+#ifndef THREAD_NUM
+#define THREAD_NUM 4
+#endif
 
     clock_gettime(CLOCK_REALTIME, &start);
 
-		/* map file context to memory space*/
+    /* map file context to memory space*/
     int fd = open(ALIGN_FILE, O_RDONLY | O_NONBLOCK);
     off_t fSize = getFileSize( ALIGN_FILE);
 
@@ -91,25 +91,25 @@ int main(int argc, char *argv[])
     pthread_t *tid = (pthread_t *) malloc(sizeof( pthread_t) * THREAD_NUM);
     append_arg **arg = (append_arg **) malloc(sizeof(append_arg *) * THREAD_NUM);
 
-		/* assign thread arg of append */
+    /* assign thread arg of append */
     for (int i = 0; i < THREAD_NUM; i++)
         arg[i] = new_append_arg(map + MAX_LAST_NAME_SIZE * i, map + fSize, i, THREAD_NUM, entryPool + i);
 
     clock_gettime(CLOCK_REALTIME, &mid);
 
-		/*TODO: thread pool*/
-		/* muti-thread version append() */
+    /*TODO: thread pool*/
+    /* muti-thread version append() */
     for (int i = 0; i < THREAD_NUM; i++)
         pthread_create( &tid[i], NULL, (void *) &append, (void *) arg[i]);
 
-		/* sync wait for thread exit */
+    /* sync wait for thread exit */
     for (int i = 0; i < THREAD_NUM; i++)
         pthread_join( tid[i], NULL);
 
     entry *last;
     //pHead = pHead->pNext;
 
-		/* Merge */
+    /* Merge */
     for (int i = 0; i < THREAD_NUM; i++) {
         if (i == 0) {
             pHead = arg[i]->pHead;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         dprintf("round %d\n", i);
     }
 
-		//show_entry( pHead);
+    //show_entry( pHead);
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time1 = diff_in_second(start, end);

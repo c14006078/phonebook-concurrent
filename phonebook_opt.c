@@ -65,45 +65,44 @@ void append(void *_arg)
     clock_gettime( CLOCK_REALTIME, &start);
 
     append_arg *arg = (append_arg *) _arg;
-/*
-    int count = 0;///> debug for correction
-    entry *entryPtr = arg->pHead;
+    /*
+        int count = 0;///> debug for correction
+        entry *entryPtr = arg->pHead;
 
-    for (char *memPtr = arg->mptr; memPtr < arg->mbound;
-            memPtr += MAX_LAST_NAME_SIZE * arg->nthread,
-             count++) {
+        for (char *memPtr = arg->mptr; memPtr < arg->mbound;
+                memPtr += MAX_LAST_NAME_SIZE * arg->nthread,
+                 count++) {
 
-				entryPtr->lastName = memPtr;
+    				entryPtr->lastName = memPtr;
 
-        dprintf("thread %d append string = %s\n", arg->idx, entryPtr->lastName);
+            dprintf("thread %d append string = %s\n", arg->idx, entryPtr->lastName);
 
-				entryPtr = (entryPtr->pNext = entryPtr + arg->nthread);
-    }*/
-		/**/
-		int count = 0;
-		char *memPtr = arg->mptr;
+    				entryPtr = (entryPtr->pNext = entryPtr + arg->nthread);
+        }*/
+    /**/
+    int count = 0;
+    char *memPtr = arg->mptr;
 
-		entry *ePtr = arg->pHead;
-		while(memPtr < arg->mbound)
-		{
-			if( memPtr != arg->mptr)
-				ePtr = (ePtr->pNext = ePtr + arg->nthread);
-			
-			ePtr->lastName = memPtr;
-			memPtr += MAX_LAST_NAME_SIZE * arg->nthread;
+    entry *ePtr = arg->pHead;
+    while(memPtr < arg->mbound) {
+        if( memPtr != arg->mptr)
+            ePtr = (ePtr->pNext = ePtr + arg->nthread);
 
-			ePtr->pNext = NULL;
-			count++;
-      dprintf("thread %d append string = %s\n", arg->idx, ePtr->lastName);
-		}
-		/**/
+        ePtr->lastName = memPtr;
+        memPtr += MAX_LAST_NAME_SIZE * arg->nthread;
 
-		/* assign the pLast*/
-		arg->pLast = ePtr;
+        ePtr->pNext = NULL;
+        count++;
+        dprintf("thread %d append string = %s\n", arg->idx, ePtr->lastName);
+    }
+    /**/
+
+    /* assign the pLast*/
+    arg->pLast = ePtr;
 //		arg->pLast = entryPtr;
 //    entryPtr->pNext = NULL;
 
-		//show_entry( arg->pHead);
+    //show_entry( arg->pHead);
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time = diff_in_second(start, end);
