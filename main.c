@@ -32,13 +32,16 @@ int main(int argc, char *argv[])
     struct timespec start, end;
     double cpu_time1, cpu_time2;
 
+#ifdef TIMING
+    struct timespec mid;
+#endif
+
 #ifdef OPT
 #include "file.c"
 #include "debug.h"
 #include <fcntl.h>
 #define ALIGN_FILE "align.txt"
 
-    struct timespec mid;
     /* align file */
     alignFile(DICT_FILE, ALIGN_FILE, MAX_LAST_NAME_SIZE);
 #else
@@ -68,8 +71,12 @@ int main(int argc, char *argv[])
 #endif
 
 #if defined(OPT)
+
 #ifndef THREAD_NUM
-#define THREAD_NUM (int)sysconf(_SC_NPROCESSORS_ONLN)
+
+    const int thread_num = (int) sysconf(_SC_NPROCESSORS_ONLN);
+#define THREAD_NUM thread_num
+
 #endif
 
     clock_gettime(CLOCK_REALTIME, &start);
@@ -94,7 +101,9 @@ int main(int argc, char *argv[])
     for (int i = 0; i < THREAD_NUM; i++)
         arg[i] = new_append_arg(map + MAX_LAST_NAME_SIZE * i, map + fSize, i, THREAD_NUM, entryPool + i);
 
+#ifdef TIMING
     clock_gettime(CLOCK_REALTIME, &mid);
+#endif
 
     /*TODO: thread pool*/
     /* muti-thread version append() */
@@ -126,6 +135,10 @@ int main(int argc, char *argv[])
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time1 = diff_in_second(start, end);
+
+#ifdef TIMING
+    printf("execution time of append() only threads part: %lf sec\n", diff_in_second(mid, end));
+#endif
 
 #else
     clock_gettime(CLOCK_REALTIME, &start);

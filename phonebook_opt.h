@@ -62,7 +62,7 @@ void append(void *arg);
 void show_entry(entry *pHead);
 
 
-#ifdef DEBUG
+#ifdef TIMING
 /**
  * porting from main.c
  */

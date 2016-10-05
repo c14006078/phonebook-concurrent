@@ -11,10 +11,17 @@ ifeq ($(strip $(DEBUG)),1)
 CFLAGS_opt += -DDEBUG -g
 endif
 
+ifeq ($(strip $(TIMING)),1)
+CFLAGS_opt += -DTIMING
+endif
+
 EXEC = phonebook_orig phonebook_opt
 all: $(EXEC)
 
 SRCS_common = main.c
+
+threadpool.o: threadpool.c
+	$(CC) $(CFLAGS_common) $(CFLAGS_opt) -c $^
 
 file_align: file_align.c
 	$(CC) $(CFLAGS_common) $^ -o $@
@@ -24,7 +31,7 @@ phonebook_orig: $(SRCS_common) phonebook_orig.c phonebook_orig.h
 		-DIMPL="\"$@.h\"" -o $@ \
 		$(SRCS_common) $@.c
 
-phonebook_opt: $(SRCS_common) phonebook_opt.c phonebook_opt.h
+phonebook_opt: $(SRCS_common) phonebook_opt.c phonebook_opt.h threadpool.o
 	$(CC) $(CFLAGS_common) $(CFLAGS_opt) \
 		-DIMPL="\"$@.h\"" -o $@ \
 		$(SRCS_common) $@.c

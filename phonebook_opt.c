@@ -41,7 +41,7 @@ append_arg *new_append_arg( char *ptr, char *bound, int id, int nthread, entry *
 
 void append(void *_arg)
 {
-#ifdef DEBUG
+#ifdef TIMING
     struct timespec start, end;
     double cpu_time;
 
@@ -71,12 +71,11 @@ void append(void *_arg)
 
     //show_entry( arg->pHead);
 
-#ifdef DEBUG
+#ifdef TIMING
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time = diff_in_second(start, end);
+    printf("thread take %lf sec, count %d\n", cpu_time, count);
 #endif
-
-    dprintf("thread take %lf sec, count %d\n", cpu_time, count);
 
     pthread_exit(NULL);
 }
@@ -89,7 +88,7 @@ void show_entry(entry *pHead)
     }
 }
 
-#ifdef DEBUG
+#ifdef TIMING
 static double diff_in_second(struct timespec t1, struct timespec t2)
 {
     struct timespec diff;

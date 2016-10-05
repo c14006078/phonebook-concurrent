@@ -20,7 +20,7 @@ threadpool_t* threadpool_create(int thread_count, int queue_size)
     pool->queue = (threadpool_task_t *) malloc(sizeof(threadpool_task_t) * queue_size);
 
     for(int i = 0; i < thread_count; i++) {
-        if( pool->threads[i] =  pthread_create(&(pool->threads[i]), NULL, threadpool_thread, (void *) pool) != 0) {//return tid, not zero
+        if( (pool->threads[i] =  pthread_create(&(pool->threads[i]), NULL, threadpool_thread, (void *) pool)) != 0) {//return tid, not zero
             //threadpool_destroy(pool, 0);
             return NULL;
         }
