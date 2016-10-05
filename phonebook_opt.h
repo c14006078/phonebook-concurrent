@@ -9,24 +9,6 @@
 #define OPT 1
 
 /**
- * Object-Oriented
- */
-/*typedef struct _phonebook{
-
-	entry *pHead;
-	entry *pLast;
-
-	entry* ( *file_append)( char* lastName, entry *pHead);
-	entry* ( *append)( char* lastName, entry *pHead);
-	entry* ( *find)( char* lastName, entry *pHead);
-} phonebook;*/
-
-/**
- * init Object
- */
-/*phonebook* new_phonebook( entry* (* append_func)( char*, entry*), entry* (*find_func)( char*, entry*));*/
-
-/**
  * 	STRUCTURE
  */
 typedef struct _detail {
@@ -79,9 +61,12 @@ void append(void *arg);
  */
 void show_entry(entry *pHead);
 
+
+#ifdef DEBUG
 /**
  * porting from main.c
  */
 static double diff_in_second(struct timespec t1, struct timespec t2);
+#endif
 
 #endif

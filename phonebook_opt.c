@@ -6,24 +6,6 @@
 #include "phonebook_opt.h"
 #include "debug.h"
 
-
-/*phonebook* new_phonebook( entry* ( *append_func)( char *, entry *), entry *( *find_func)( char *, entry *)){
-
-	phonebook *phbk = ( phonebook *) malloc( sizeof( phonebook));
-
-	phbk->pHead = NULL;
-	phbk->pLast = NULL;
-	phpk->append = append_func;
-	phpk->find = find_func;
-
-	return phpk;
-}*/
-
-/*entry *phonebook_findName( char lastname[], phonebook* phbk)
-{
-	return findName( lastname, phbk->pHead);
-}*/
-
 entry *findName(char lastname[], entry *pHead)
 {
     size_t len = strlen( lastname);
@@ -59,27 +41,15 @@ append_arg *new_append_arg( char *ptr, char *bound, int id, int nthread, entry *
 
 void append(void *_arg)
 {
+#ifdef DEBUG
     struct timespec start, end;
     double cpu_time;
 
     clock_gettime( CLOCK_REALTIME, &start);
+#endif
 
     append_arg *arg = (append_arg *) _arg;
-    /*
-        int count = 0;///> debug for correction
-        entry *entryPtr = arg->pHead;
 
-        for (char *memPtr = arg->mptr; memPtr < arg->mbound;
-                memPtr += MAX_LAST_NAME_SIZE * arg->nthread,
-                 count++) {
-
-    				entryPtr->lastName = memPtr;
-
-            dprintf("thread %d append string = %s\n", arg->idx, entryPtr->lastName);
-
-    				entryPtr = (entryPtr->pNext = entryPtr + arg->nthread);
-        }*/
-    /**/
     int count = 0;
     char *memPtr = arg->mptr;
 
@@ -95,17 +65,16 @@ void append(void *_arg)
         count++;
         dprintf("thread %d append string = %s\n", arg->idx, ePtr->lastName);
     }
-    /**/
 
     /* assign the pLast*/
     arg->pLast = ePtr;
-//		arg->pLast = entryPtr;
-//    entryPtr->pNext = NULL;
 
     //show_entry( arg->pHead);
 
+#ifdef DEBUG
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time = diff_in_second(start, end);
+#endif
 
     dprintf("thread take %lf sec, count %d\n", cpu_time, count);
 
@@ -120,6 +89,7 @@ void show_entry(entry *pHead)
     }
 }
 
+#ifdef DEBUG
 static double diff_in_second(struct timespec t1, struct timespec t2)
 {
     struct timespec diff;
@@ -132,3 +102,4 @@ static double diff_in_second(struct timespec t1, struct timespec t2)
     }
     return (diff.tv_sec + diff.tv_nsec / 1000000000.0);
 }
+#endif

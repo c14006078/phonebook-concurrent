@@ -68,9 +68,8 @@ int main(int argc, char *argv[])
 #endif
 
 #if defined(OPT)
-
 #ifndef THREAD_NUM
-#define THREAD_NUM 4
+#define THREAD_NUM (int)sysconf(_SC_NPROCESSORS_ONLN)
 #endif
 
     clock_gettime(CLOCK_REALTIME, &start);
@@ -107,7 +106,6 @@ int main(int argc, char *argv[])
         pthread_join( tid[i], NULL);
 
     entry *last;
-    //pHead = pHead->pNext;
 
     /* Merge */
     for (int i = 0; i < THREAD_NUM; i++) {
