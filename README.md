@@ -22,6 +22,16 @@ Install Git pre-commit hook to check C/C++ source file format
 ```sh
 scripts/install-git-hooks
 ```
+#Makefile flag
+
+Debug version: enable the dprintf()
+```sh
+make DEBUG=1
+```
+Timing version: timing each of threads
+```sh
+make TIMING=1
+```
 
 # Licensing
 `phonebook` is freely redistributable under the two-clause BSD License.

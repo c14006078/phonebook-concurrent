@@ -3,14 +3,17 @@ CFLAGS_common ?= -Wall -std=gnu99
 CFLAGS_orig = -O0
 CFLAGS_opt  = -O0 -pthread -g -pg
 
+#assign num of threads
 ifdef THREAD
 CFLAGS_opt  += -D THREAD_NUM=${THREAD}
 endif
 
+#Debug version, It will enable the dprintf() in debug.h
 ifeq ($(strip $(DEBUG)),1)
 CFLAGS_opt += -DDEBUG -g
 endif
 
+#More time calculation for every thread time
 ifeq ($(strip $(TIMING)),1)
 CFLAGS_opt += -DTIMING
 endif
