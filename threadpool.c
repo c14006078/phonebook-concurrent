@@ -117,3 +117,59 @@ threadpool_task_err_t threadpool_add(threadpool_t *pool, void (*func)(void *), v
 
     return err;
 }
+
+//free threadpool
+//ret 0 = normal, 1 = failure
+int threadpool_free(threadpool_t* pool)
+{
+    if(pool == NULL || pool->started > 0) {//check the any thread is runing
+        return -1;
+    }
+
+    if( pool->threads) {
+        free(pool->threads);
+        free(pool->queue);
+
+        pthread_mutex_lock(&(pool->lock));//Important to get the lock and destory it
+        pthread_mutex_destroy(&(pool->lock));
+        pthread_cond_destroy(&(pool->notify));
+    }
+
+    free(pool);
+    return 0;
+}
+
+threadpool_task_err_t threadpool_destory(threadpool_t* pool)
+{
+    threadpool_task_err_t err = threadpool_normal_exit;
+
+    if( pool == NULL)
+        return threadpool_invalid;
+
+    if(pthread_mutex_lock(&(pool->lock)) != 0)
+        return threadpool_lock_failure;
+
+    do {
+        // already shutdown?
+        if(pool->shutdown) {
+            err = threadpool_shutdown;
+            break;
+        }
+
+        if((pthread_cond_broadcast(&(pool->notify)) != 0) ||
+                (pthread_mutex_unlock(&(pool->lock))) != 0) {
+            err = threadpool_lock_failure;
+            break;
+        }
+
+        //Join all worker threads
+        for(int i = 0; i < pool->thread_count; i++)
+            if(pthread_join(pool->threads[i], NULL) != 0)
+                err = threadpool_thread_failure;
+    } while(0);
+
+    if(!err)
+        threadpool_free(pool);
+
+    return err;
+}

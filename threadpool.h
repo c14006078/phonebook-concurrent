@@ -26,6 +26,7 @@ typedef struct {
 
 /*for err flag*/
 typedef enum {
+    threadpool_normal_exit,
     threadpool_invalid,
     threadpool_lock_failure,
     threadpool_queue_full,
@@ -41,3 +42,11 @@ static void *threadpool_thread(void *threadpool);
 
 //Add task to threadpool
 threadpool_task_err_t threadpool_add(threadpool_t *pool, void (*func)(void *), void *arg);
+
+//free threadpool
+//ret 0 = normal, 1 = failure
+int threadpool_free(threadpool_t* pool);
+
+//destory the threadpool by accident
+threadpool_task_err_t threadpool_destory(threadpool_t* pool);
+
