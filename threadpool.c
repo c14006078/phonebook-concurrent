@@ -139,7 +139,7 @@ int threadpool_free(threadpool_t* pool)
     return 0;
 }
 
-threadpool_task_err_t threadpool_destory(threadpool_t* pool)
+threadpool_task_err_t threadpool_destroy(threadpool_t* pool)
 {
     threadpool_task_err_t err = threadpool_normal_exit;
 

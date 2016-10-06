@@ -48,5 +48,5 @@ threadpool_task_err_t threadpool_add(threadpool_t *pool, void (*func)(void *), v
 int threadpool_free(threadpool_t* pool);
 
 //destory the threadpool by accident
-threadpool_task_err_t threadpool_destory(threadpool_t* pool);
+threadpool_task_err_t threadpool_destroy(threadpool_t* pool);
 
