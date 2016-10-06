@@ -1,5 +1,7 @@
 #include "threadpool.h"
 
+static void *threadpool_thread(void *threadpool);
+
 /*init thread pool*/
 threadpool_t* threadpool_create(int thread_count, int queue_size)
 {
