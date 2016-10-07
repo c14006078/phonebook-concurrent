@@ -25,7 +25,7 @@ entry *findName(char lastname[], entry *pHead)
     return NULL;
 }
 
-append_arg *new_append_arg( char *ptr, char *bound, int id, int nthread, entry *start)
+/*append_arg *new_append_arg( char *ptr, char *bound, int id, int nthread, entry *start)
 {
     append_arg *arg = (append_arg *) malloc(sizeof(append_arg));
 
@@ -37,9 +37,22 @@ append_arg *new_append_arg( char *ptr, char *bound, int id, int nthread, entry *
     arg->pHead = (arg->pLast = start);
 
     return arg;
+}*/
+
+append_arg *new_append_arg(char *ptr, char *bound, entry *start)
+{
+    append_arg *arg = (append_arg *) malloc(sizeof(append_arg));
+
+    arg->mptr = ptr;
+    arg->mbound = bound;
+
+    arg->pHead = (arg->pLast = start);
+
+    return arg;
 }
 
-void append(void *_arg)
+
+/*void append(void *_arg)
 {
 #ifdef TIMING
     struct timespec start, end;
@@ -65,6 +78,48 @@ void append(void *_arg)
         count++;
         dprintf("thread %d append string = %s\n", arg->idx, ePtr->lastName);
     }
+*/
+/* assign the pLast*/
+/*    arg->pLast = ePtr;
+
+    //show_entry( arg->pHead);
+
+#ifdef TIMING
+    clock_gettime(CLOCK_REALTIME, &end);
+    cpu_time = diff_in_second(start, end);
+    printf("thread take %lf sec, count %d\n", cpu_time, count);
+#endif
+
+    pthread_exit(NULL);
+}*/
+
+void append(void *_arg)
+{
+#ifdef TIMING
+    struct timespec start, end;
+    double cpu_time;
+
+    clock_gettime( CLOCK_REALTIME, &start);
+#endif
+
+    append_arg *arg = (append_arg *) _arg;
+    dprintf("append ctx = %s\n", arg->mptr);
+
+    int count = 0;
+    char *memPtr = arg->mptr;
+
+    entry *ePtr = arg->pHead;
+    while(memPtr < arg->mbound) {
+        if( memPtr != arg->mptr)
+            ePtr = (ePtr->pNext = ePtr + 1);
+
+        ePtr->lastName = memPtr;
+        memPtr += MAX_LAST_NAME_SIZE;
+
+        ePtr->pNext = NULL;
+        count++;
+        //dprintf("thread %d append string = %s\n", arg->idx, ePtr->lastName);
+    }
 
     /* assign the pLast*/
     arg->pLast = ePtr;
@@ -77,8 +132,10 @@ void append(void *_arg)
     printf("thread take %lf sec, count %d\n", cpu_time, count);
 #endif
 
-    pthread_exit(NULL);
+    //return NULL;
+    //pthread_exit(NULL);
 }
+
 
 void show_entry(entry *pHead)
 {

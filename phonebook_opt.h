@@ -35,8 +35,8 @@ typedef struct __PHONE_BOOK_ENTRY {
 typedef struct _append_arg {
     char *mptr; 				///< mem ptr
     char *mbound; 			///< mem boundary
-    int idx;						///< thread id
-    int nthread;
+    //int idx;						///< thread id
+    //int nthread;
     entry *pHead;
     entry *pLast;
 } append_arg;
@@ -49,7 +49,8 @@ entry *findName(char lastname[], entry *pHead);
 /**
  * Thread argument assign
  */
-append_arg *new_append_arg(char *ptr, char *eptr, int tid, int ntd, entry *start);
+/*append_arg *new_append_arg(char *ptr, char *eptr, int tid, int ntd, entry *start);*/
+append_arg *new_append_arg(char *ptr, char *eptr, entry *start);
 
 /**
  * Pthread function with parallize

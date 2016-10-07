@@ -1,5 +1,11 @@
 #include "threadpool.h"
 
+/*print for debug*/
+void show_threadpool(threadpool_t* pool)
+{
+    printf("head = %d tail = %d peding task = %d started = %d\n",
+           pool->head, pool->tail, pool->peding_task_count, pool->started);
+}
 static void *threadpool_thread(void *threadpool);
 
 /*init thread pool*/
@@ -15,6 +21,7 @@ threadpool_t* threadpool_create(int thread_count, int queue_size)
     pool->queue_size = queue_size;
     pool->head = pool->tail = pool->peding_task_count = 0;
     pool->shutdown =  pool->started = 0;
+    assert(pthread_mutex_init(&(pool->lock), NULL) == 0 && pthread_cond_init(&(pool->notify), NULL) == 0);
 
 
     // init thread
@@ -22,9 +29,10 @@ threadpool_t* threadpool_create(int thread_count, int queue_size)
     pool->queue = (threadpool_task_t *) malloc(sizeof(threadpool_task_t) * queue_size);
 
     for(int i = 0; i < thread_count; i++) {
-        if( (pool->threads[i] =  pthread_create(&(pool->threads[i]), NULL, threadpool_thread, (void *) pool)) != 0) {//return tid, not zero
+        if(pthread_create(&(pool->threads[i]), NULL, threadpool_thread, (void *) pool) != 0) {//return tid, not zero
             //threadpool_destroy(pool, 0);
-            return NULL;
+            eprintf("pthread create fail");
+            exit(0);
         }
 
         pool->thread_count++;
@@ -50,7 +58,7 @@ static void *threadpool_thread(void *threadpool)
             pthread_cond_wait(&(pool->notify), &(pool->lock));//wait for cond_sig
         }
 
-        if(!(pool->shutdown) && (pool->peding_task_count == 0))
+        if((pool->peding_task_count == 0) && (pool->shutdown == 1))
             break;
 
         /*after sig we can start task*/
@@ -59,6 +67,7 @@ static void *threadpool_thread(void *threadpool)
 
         pool->head = (pool->head + 1) % pool->queue_size;//move the cur queue head to next
         pool->peding_task_count--;
+        printf("done!\n");
 
         //release and let other thread to reach cond_wait
         pthread_mutex_unlock(&(pool->lock));
@@ -103,6 +112,7 @@ threadpool_task_err_t threadpool_add(threadpool_t *pool, void (*func)(void *), v
         // Add task to queue
         pool->queue[pool->tail].func = func;
         pool->queue[pool->tail].arg = arg;
+        pool->tail =  (pool->tail + 1) % pool->queue_size;//ring buf point to next
         pool->peding_task_count++;
 
         //cond_sig
@@ -158,16 +168,27 @@ threadpool_task_err_t threadpool_destroy(threadpool_t* pool)
             break;
         }
 
-        if((pthread_cond_broadcast(&(pool->notify)) != 0) ||
-                (pthread_mutex_unlock(&(pool->lock))) != 0) {
+        pool->shutdown = 1;//enhance shutdown flag
+
+        if(pthread_cond_broadcast(&(pool->notify)) != 0 ||
+                pthread_mutex_unlock(&(pool->lock)) != 0) {
             err = threadpool_lock_failure;
             break;
         }
 
         //Join all worker threads
+        int j = 0;
         for(int i = 0; i < pool->thread_count; i++)
-            if(pthread_join(pool->threads[i], NULL) != 0)
+            while((j = pthread_join(pool->threads[i], NULL)) != 0) {
+                perror("join");
+                printf("join return %d\n", j);
+                show_threadpool(pool);
                 err = threadpool_thread_failure;
+            }
+        //sprintf("pthread_join()");
+        //pthread_join(pool->threads[i], NULL);
+
+        // syserr(pthread_join(pool->threads[i], NULL) != 0, "pthread_join");
     } while(0);
 
     if(!err)

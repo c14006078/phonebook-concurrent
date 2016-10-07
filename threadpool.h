@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <assert.h>
+#include "debug.h"
 
 /*for thread*/
 typedef struct {
@@ -23,6 +24,9 @@ typedef struct {
     int shutdown;//1 = true, 0 = false
     int started;
 } threadpool_t;
+
+/*print for debug*/
+void show_threadpool(threadpool_t *pool);
 
 /*for err flag*/
 typedef enum {

@@ -92,32 +92,100 @@ int main(int argc, char *argv[])
     entry *entryPool = (entry *) malloc(sizeof(entry) * fSize / MAX_LAST_NAME_SIZE);
     assert( entryPool && "entry_pool error");
 
-    pthread_setconcurrency(THREAD_NUM + 1);
+    /*pthread_setconcurrency(THREAD_NUM + 1);
 
     pthread_t *tid = (pthread_t *) malloc(sizeof( pthread_t) * THREAD_NUM);
-    append_arg **arg = (append_arg **) malloc(sizeof(append_arg *) * THREAD_NUM);
+    append_arg **arg = (append_arg **) malloc(sizeof(append_arg *) * THREAD_NUM);*/
 
     /* assign thread arg of append */
-    for (int i = 0; i < THREAD_NUM; i++)
+    /*for (int i = 0; i < THREAD_NUM; i++)
         arg[i] = new_append_arg(map + MAX_LAST_NAME_SIZE * i, map + fSize, i, THREAD_NUM, entryPool + i);
+    #ifdef TIMING
+
+    	clock_gettime(CLOCK_REALTIME, &mid);
+    #endif*/
+
+    /*TODO: thread pool*/
+    /* muti-thread version append() */
+    /**for (int i = 0; i < THREAD_NUM; i++)
+        pthread_create( &tid[i], NULL, (void *) &append, (void *) arg[i]);*/
+
+    //entry *last;
+
+    /* sync wait for thread exit */
+    /*for (int i = 0; i < THREAD_NUM; i++)
+        pthread_join( tid[i], NULL);*/
+
+    /* Merge */
+    /*    for (int i = 0; i < THREAD_NUM; i++) {
+            if (i == 0) {
+                pHead = arg[i]->pHead;
+                dprintf("Connect %d head string %s %p\n", i, arg[i]->pHead->lastName, arg[i]->mptr);
+            } else {
+                last->pNext = arg[i]->pHead;
+                dprintf("Connect %d head string %s %p\n", i, arg[i]->pHead->lastName, arg[i]->mptr);
+            }
+
+            last = arg[i]->pLast;
+            dprintf("Connect %d tail string %s %p\n", i, arg[i]->pLast->lastName, arg[i]->mptr);
+            dprintf("round %d\n", i);
+        }
+
+        //show_entry( pHead);
+
+        clock_gettime(CLOCK_REALTIME, &end);
+        cpu_time1 = diff_in_second(start, end);
+
+    #ifdef TIMING
+        printf("execution time of append() only threads part: %lf sec\n", diff_in_second(mid, end));
+    #endif*/
+
+    /*Threadpool*/
+#include "threadpool.h"
+
+#define QUEUE_SIZE 100
+#define APPEND_NUM 100
 
 #ifdef TIMING
     clock_gettime(CLOCK_REALTIME, &mid);
 #endif
 
-    /*TODO: thread pool*/
-    /* muti-thread version append() */
-    for (int i = 0; i < THREAD_NUM; i++)
-        pthread_create( &tid[i], NULL, (void *) &append, (void *) arg[i]);
+    threadpool_t* pool = threadpool_create(THREAD_NUM, QUEUE_SIZE);
 
-    /* sync wait for thread exit */
-    for (int i = 0; i < THREAD_NUM; i++)
-        pthread_join( tid[i], NULL);
+    /*Const for threadpool*/
+    int index_num = fSize / MAX_LAST_NAME_SIZE;
+    int task_num  = index_num / APPEND_NUM;
+    int left_task = index_num % APPEND_NUM;
 
-    entry *last;
+    int bound_offset = APPEND_NUM * MAX_LAST_NAME_SIZE;
+    int last_offset = left_task * MAX_LAST_NAME_SIZE;
+
+    /*allocate mem space*/
+    append_arg **arg = (append_arg **) malloc(sizeof(append_arg *) * task_num);
+
+    /*assign work arg*/
+    int i;
+    int err;
+    for (i = 0; i < task_num; i++) {
+        arg[i] = new_append_arg(map + bound_offset * i, map + bound_offset * (i+1), entryPool + APPEND_NUM * i);
+        show_threadpool(pool); //Debug use
+        while((err = threadpool_add( pool, append, (void *) arg[i])) != 0) {
+            printf("i = %d, error num %d, arg->lastName = %s\n", i,err, arg[i]->mptr);
+        }
+    }
+
+    /*check the left work*/
+    if( left_task > 0) {
+        arg[i] = new_append_arg(map + bound_offset * i, map + bound_offset * i + last_offset, entryPool + i * APPEND_NUM);
+        while((err = threadpool_add( pool, (void *) &append, (void *) arg)) != 0)
+            printf("error num %d\n", err);
+    }
+
+    assert( threadpool_destroy(pool) == 0);
 
     /* Merge */
-    for (int i = 0; i < THREAD_NUM; i++) {
+    entry *last;
+    for (int i = 0; i < task_num; i++) {
         if (i == 0) {
             pHead = arg[i]->pHead;
             dprintf("Connect %d head string %s %p\n", i, arg[i]->pHead->lastName, arg[i]->mptr);
@@ -131,7 +199,8 @@ int main(int argc, char *argv[])
         dprintf("round %d\n", i);
     }
 
-    //show_entry( pHead);
+    //show_entry(pHead);
+    show_threadpool(pool);
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time1 = diff_in_second(start, end);
@@ -139,6 +208,7 @@ int main(int argc, char *argv[])
 #ifdef TIMING
     printf("execution time of append() only threads part: %lf sec\n", diff_in_second(mid, end));
 #endif
+
 
 #else
     clock_gettime(CLOCK_REALTIME, &start);
@@ -195,7 +265,7 @@ int main(int argc, char *argv[])
     free(pHead);
 #else
     free(entryPool);
-    free(tid);
+    //free(tid);
     free(arg);
     munmap(map, fSize);
 #endif
